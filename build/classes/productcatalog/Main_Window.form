@@ -305,6 +305,9 @@
             </Property>
             <Property name="text" type="java.lang.String" value="DELETE"/>
           </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="delete_jButtonActionPerformed"/>
+          </Events>
         </Component>
         <Component class="javax.swing.JButton" name="first_jButton">
           <Properties>

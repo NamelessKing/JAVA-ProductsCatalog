@@ -22,6 +22,8 @@ import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import org.sqlite.SQLiteJDBCLoader;
 import java.sql.*;
+import java.util.ArrayList;
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
@@ -103,6 +105,46 @@ public class Main_Window extends javax.swing.JFrame {
         
         ImageIcon image = new ImageIcon(img2);
         return image; 
+    }
+    
+    
+    /*
+    Display Data In JTable
+    */
+    //1-Fill ArrayList With The Data
+    public ArrayList<Product> getProductList(){
+    
+            ArrayList<Product> productList = new ArrayList<Product>();
+            Connection con = getConnection();
+            String query = "SELECT * FROM Products";
+        try {
+            
+            Statement st = con.createStatement();
+            ResultSet rs = st.executeQuery(query);
+            
+            Product product;
+            
+            while (rs.next()){
+                product = new Product(rs.getInt("id"), rs.getString("name"),
+                Float.parseFloat(rs.getString("price")),rs.getString("add_date"),
+                        rs.getBytes("image"),rs.getString("description"));
+                
+                productList.add(product);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Main_Window.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return productList;
+    }
+    
+    //2-Populate JTable
+    public void showProductsInJTable(){
+    
+        ArrayList<Product> list = getProductList();
+        DefaultTableModel model = (DefaultTableModel)jTable1.getModel();
+        
+        Object[] row = new Object[4];//DA QUI**************************************************************
     }
     
 
@@ -200,6 +242,11 @@ public class Main_Window extends javax.swing.JFrame {
 
         delete_jButton.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
         delete_jButton.setText("DELETE");
+        delete_jButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                delete_jButtonActionPerformed(evt);
+            }
+        });
 
         first_jButton.setFont(new java.awt.Font("Tahoma", 1, 15)); // NOI18N
         first_jButton.setText("FIRST");
@@ -462,6 +509,29 @@ public class Main_Window extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "One Or More Fields Are Empty Or Wrong");
         }
     }//GEN-LAST:event_update_jButtonActionPerformed
+
+    private void delete_jButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_delete_jButtonActionPerformed
+        
+        if(!id_jTextField.getText().equals("")){
+            
+            try {
+                Connection con = getConnection();
+                PreparedStatement ps = con.prepareStatement("DELETE FROM products WHERE id = ?");
+                int id = Integer.parseInt(id_jTextField.getText());
+                ps.setInt(1, id);
+                ps.executeUpdate();
+                
+                JOptionPane.showMessageDialog(null, "Product Deleted");
+                
+            } catch (SQLException ex) {
+                Logger.getLogger(Main_Window.class.getName()).log(Level.SEVERE, null, ex);
+                JOptionPane.showMessageDialog(null, "Product Not Deleted");
+            }
+                    
+        }else{
+            JOptionPane.showMessageDialog(null, "Product Not Deleted: No ID To Delete");
+        }
+    }//GEN-LAST:event_delete_jButtonActionPerformed
 
     /**
      * @param args the command line arguments
