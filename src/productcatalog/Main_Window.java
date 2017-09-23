@@ -22,7 +22,11 @@ import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import org.sqlite.SQLiteJDBCLoader;
 import java.sql.*;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Locale;
+import java.util.TimeZone;
 import javax.swing.table.DefaultTableModel;
 
 /**
@@ -31,15 +35,18 @@ import javax.swing.table.DefaultTableModel;
  */
 public class Main_Window extends javax.swing.JFrame {
 
+    String imgPhat = null;
+    int pos = 0;
     /**
      * Creates new form Main_Window
      */
     public Main_Window() {
         initComponents();
         //getConnection();
+        showProductsInJTable();
     }
     
-    String imgPhat = null;
+    
     
     public Connection getConnection(){
         
@@ -141,10 +148,46 @@ public class Main_Window extends javax.swing.JFrame {
     //2-Populate JTable
     public void showProductsInJTable(){
     
+        
         ArrayList<Product> list = getProductList();
         DefaultTableModel model = (DefaultTableModel)jTable1.getModel();
         
-        Object[] row = new Object[4];//DA QUI**************************************************************
+        //clear JTable content
+        model.setRowCount(0);
+        Object[] row = new Object[4];
+        for (int i = 0; i < list.size(); i++) {
+            
+            row[0] = list.get(i).getId();
+            row[1] = list.get(i).getName();
+            row[2] = list.get(i).getPrice();
+            row[3] = list.get(i).getAddData();
+            
+            model.addRow(row);
+            
+        }
+        
+    }
+    
+    /*Convert java date to sql date*/
+    public java.sql.Date convertJavaDateToSqlDate(java.util.Date date) {
+    return new java.sql.Date(date.getTime());
+    }
+    
+    public void showItem(int index){
+        id_jTextField.setText(Integer.toString(getProductList().get(index).getId()));
+        name_jTextField.setText(getProductList().get(index).getName());
+        price_jTextField.setText(Float.toString(getProductList().get(index).getPrice()));
+        
+        try {
+            Date addDate = convertJavaDateToSqlDate(new SimpleDateFormat("dd-MM-yyyy")
+                    .parse(getProductList().get(index).getAddData()));
+            date_jDateChooser.setDate(addDate);
+        } catch (Exception e) {
+            Logger.getLogger(Main_Window.class.getName()).log(Level.SEVERE,null,e);
+        }
+        
+        image_jLabel.setIcon(ResizeImage(null, getProductList().get(index).getImage()));
+        description_jTextArea.setText(getProductList().get(index).getDescription());
     }
     
 
@@ -198,6 +241,12 @@ public class Main_Window extends javax.swing.JFrame {
         addDate_jLabel.setText("Add Date:");
 
         id_jTextField.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
+        id_jTextField.setEnabled(false);
+        id_jTextField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                id_jTextFieldActionPerformed(evt);
+            }
+        });
 
         name_jTextField.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
 
@@ -213,6 +262,11 @@ public class Main_Window extends javax.swing.JFrame {
                 "ID", "NAME", "PRICE", "ADD DATE"
             }
         ));
+        jTable1.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jTable1MouseClicked(evt);
+            }
+        });
         jScrollPane1.setViewportView(jTable1);
 
         chooseImage_jButton.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
@@ -250,15 +304,35 @@ public class Main_Window extends javax.swing.JFrame {
 
         first_jButton.setFont(new java.awt.Font("Tahoma", 1, 15)); // NOI18N
         first_jButton.setText("FIRST");
+        first_jButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                first_jButtonActionPerformed(evt);
+            }
+        });
 
         previous_jButton.setFont(new java.awt.Font("Tahoma", 1, 15)); // NOI18N
         previous_jButton.setText("PREVIOUS");
+        previous_jButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                previous_jButtonActionPerformed(evt);
+            }
+        });
 
         next_jButton.setFont(new java.awt.Font("Tahoma", 1, 15)); // NOI18N
         next_jButton.setText("NEXT");
+        next_jButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                next_jButtonActionPerformed(evt);
+            }
+        });
 
         last_jButton.setFont(new java.awt.Font("Tahoma", 1, 15)); // NOI18N
         last_jButton.setText("LAST");
+        last_jButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                last_jButtonActionPerformed(evt);
+            }
+        });
 
         description_jLabel.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
         description_jLabel.setText("DESCRIPTION");
@@ -424,6 +498,9 @@ public class Main_Window extends javax.swing.JFrame {
                 
                 ps.executeUpdate();
                 
+                //jTable1.removeAll();
+                showProductsInJTable();
+                
                 JOptionPane.showMessageDialog(null, "Data Added");
                         
             } catch (Exception ex) {
@@ -465,6 +542,10 @@ public class Main_Window extends javax.swing.JFrame {
                     ps.setInt(5, Integer.parseInt( id_jTextField.getText()));
                     
                     ps.executeUpdate();
+                    showProductsInJTable();
+                    
+                    
+                    JOptionPane.showMessageDialog(null, "Product Deleted");
                     
                 } catch (SQLException ex) {
                     
@@ -498,6 +579,10 @@ public class Main_Window extends javax.swing.JFrame {
                     ps.setInt(6, Integer.parseInt( id_jTextField.getText()));
                     
                     ps.executeUpdate();
+                    showProductsInJTable();
+                    
+                    
+                    JOptionPane.showMessageDialog(null, "Product Deleted");
                     
                 }catch(Exception ex){
                     
@@ -520,6 +605,7 @@ public class Main_Window extends javax.swing.JFrame {
                 int id = Integer.parseInt(id_jTextField.getText());
                 ps.setInt(1, id);
                 ps.executeUpdate();
+                showProductsInJTable();
                 
                 JOptionPane.showMessageDialog(null, "Product Deleted");
                 
@@ -532,6 +618,46 @@ public class Main_Window extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "Product Not Deleted: No ID To Delete");
         }
     }//GEN-LAST:event_delete_jButtonActionPerformed
+
+    private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
+        
+        int index = jTable1.getSelectedRow();
+        showItem(index); 
+    }//GEN-LAST:event_jTable1MouseClicked
+
+    private void first_jButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_first_jButtonActionPerformed
+        int pos = 0;
+        showItem(pos);
+    }//GEN-LAST:event_first_jButtonActionPerformed
+
+    private void last_jButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_last_jButtonActionPerformed
+        int pos = getProductList().size()-1;
+        showItem(pos);
+    }//GEN-LAST:event_last_jButtonActionPerformed
+
+    private void next_jButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_next_jButtonActionPerformed
+        pos++;
+        
+        if(pos >= getProductList().size()){
+            pos = getProductList().size()-1;
+        }
+        
+        showItem(pos);
+    }//GEN-LAST:event_next_jButtonActionPerformed
+
+    private void previous_jButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previous_jButtonActionPerformed
+        pos--;
+        
+        if(pos < getProductList().size()){
+            pos = 0;
+        }
+        
+        showItem(pos);
+    }//GEN-LAST:event_previous_jButtonActionPerformed
+
+    private void id_jTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_id_jTextFieldActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_id_jTextFieldActionPerformed
 
     /**
      * @param args the command line arguments
